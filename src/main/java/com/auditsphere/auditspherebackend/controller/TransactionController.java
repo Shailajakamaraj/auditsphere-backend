@@ -1,61 +1,182 @@
 package com.auditsphere.auditspherebackend.controller;
 
+
+
 import com.auditsphere.auditspherebackend.dto.TransactionRequestDTO;
 import com.auditsphere.auditspherebackend.dto.TransactionResponseDTO;
 import com.auditsphere.auditspherebackend.service.TransactionService;
+
+
+import jakarta.validation.Valid;
+
+
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
 
 import java.util.List;
 
+
+
 @RestController
 @RequestMapping("/transactions")
+@CrossOrigin(
+        origins = {
+                "http://localhost:5173",
+                "http://localhost:5176"
+        }
+)
 public class TransactionController {
+
+
 
     private final TransactionService transactionService;
 
-    public TransactionController(TransactionService transactionService) {
+
+
+    public TransactionController(
+            TransactionService transactionService
+    ){
+
         this.transactionService = transactionService;
+
     }
 
 
-    // Create Transaction
+
+
+
+    // USER + MANAGER + ADMIN
+
     @PostMapping
+    @PreAuthorize(
+            "hasAnyRole('ADMIN','MANAGER','USER')"
+    )
     public TransactionResponseDTO createTransaction(
-            @RequestBody TransactionRequestDTO dto) {
+            @RequestBody @Valid TransactionRequestDTO dto
+    ){
 
         return transactionService.createTransaction(dto);
+
     }
 
 
-    // Get All Transactions
+
+
+
+
+
+    // ADMIN + MANAGER + AUDITOR
+
     @GetMapping
-    public List<TransactionResponseDTO> getAllTransactions() {
+    @PreAuthorize(
+            "hasAnyRole('ADMIN','MANAGER','AUDITOR')"
+    )
+    public List<TransactionResponseDTO> getAllTransactions(){
 
         return transactionService.getAllTransactions();
+
     }
 
 
-    // Get Transaction By ID
+
+
+
+
+
+    // ADMIN + MANAGER + AUDITOR
+
     @GetMapping("/{id}")
+    @PreAuthorize(
+            "hasAnyRole('ADMIN','MANAGER','AUDITOR')"
+    )
     public TransactionResponseDTO getTransactionById(
-            @PathVariable Long id) {
+            @PathVariable Long id
+    ){
 
         return transactionService.getTransactionById(id);
+
     }
 
 
-    // Duplicate Transactions
+
+
+
+
+
+    // DUPLICATE INVOICE ANALYSIS
+
     @GetMapping("/duplicates")
-    public List<TransactionResponseDTO> getDuplicates() {
+    @PreAuthorize(
+            "hasAnyRole('ADMIN','MANAGER','AUDITOR')"
+    )
+    public List<TransactionResponseDTO> getDuplicates(){
 
         return transactionService.getDuplicateTransactions();
+
     }
 
 
-    // High Risk Transactions
+
+
+
+
+
+    // HIGH RISK ANALYSIS
+
     @GetMapping("/high-risk")
-    public List<TransactionResponseDTO> getHighRiskTransactions() {
+    @PreAuthorize(
+            "hasAnyRole('ADMIN','MANAGER','AUDITOR')"
+    )
+    public List<TransactionResponseDTO> getHighRiskTransactions(){
 
         return transactionService.getHighRiskTransactions();
+
     }
+
+
+
+
+
+
+
+    // ADMIN + MANAGER
+
+    @PutMapping("/{id}")
+    @PreAuthorize(
+            "hasAnyRole('ADMIN','MANAGER')"
+    )
+    public TransactionResponseDTO updateTransaction(
+            @PathVariable Long id,
+            @RequestBody @Valid TransactionRequestDTO dto
+    ){
+
+        return transactionService.updateTransaction(
+                id,
+                dto
+        );
+
+    }
+
+
+
+
+
+
+
+    // ONLY ADMIN
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize(
+            "hasRole('ADMIN')"
+    )
+    public void deleteTransaction(
+            @PathVariable Long id
+    ){
+
+        transactionService.deleteTransaction(id);
+
+    }
+
+
 }

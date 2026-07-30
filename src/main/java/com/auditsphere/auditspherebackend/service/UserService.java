@@ -1,6 +1,10 @@
 package com.auditsphere.auditspherebackend.service;
 
-import com.auditsphere.auditspherebackend.dto.*;
+import com.auditsphere.auditspherebackend.dto.LoginRequestDTO;
+import com.auditsphere.auditspherebackend.dto.LoginResponseDTO;
+import com.auditsphere.auditspherebackend.dto.UserRequestDTO;
+import com.auditsphere.auditspherebackend.dto.UserResponseDTO;
+import com.auditsphere.auditspherebackend.entity.Role;
 import com.auditsphere.auditspherebackend.entity.User;
 import com.auditsphere.auditspherebackend.jwt.JwtUtil;
 import com.auditsphere.auditspherebackend.repository.UserRepository;
@@ -9,195 +13,296 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 
 @Service
 public class UserService {
+
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
 
-    // Constructor Injection
-    public UserService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder,
-                       JwtUtil jwtUtil) {
-
+    public UserService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            JwtUtil jwtUtil
+    ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
     }
 
 
-    // Register User
-    public UserResponseDTO saveUser(UserRequestDTO userRequestDTO) {
+
+
+
+    // REGISTER USER
+    public UserResponseDTO saveUser(UserRequestDTO dto) {
+
 
         User user = new User();
 
-        user.setName(userRequestDTO.getName());
-        user.setEmail(userRequestDTO.getEmail());
 
-        // Encrypt password before saving
+        user.setName(dto.getName());
+        user.setEmail(dto.getEmail());
+
+
         user.setPassword(
-                passwordEncoder.encode(userRequestDTO.getPassword())
+                passwordEncoder.encode(dto.getPassword())
         );
 
-        user.setRole(userRequestDTO.getRole());
+
+        if(dto.getRole()!=null){
+            user.setRole(dto.getRole());
+        }
+        else{
+            user.setRole(Role.USER);
+        }
+
 
 
         User savedUser = userRepository.save(user);
 
+
         return convertToDTO(savedUser);
+
     }
 
 
 
-    // Get All Users
-    public List<User> getAllUsers() {
-
-        return userRepository.findAll();
-    }
 
 
 
-    // Get User By ID
-    public UserResponseDTO getUserById(Long id) {
-
-        User user = userRepository.findById(id)
-                .orElse(null);
+    // LOGIN USER
+    public LoginResponseDTO login(LoginRequestDTO dto){
 
 
-        if(user == null) {
-            return null;
+        User user = userRepository
+                .findByEmail(dto.getEmail())
+                .orElseThrow(
+                        () -> new RuntimeException("User not found")
+                );
+
+
+
+        if(!passwordEncoder.matches(
+                dto.getPassword(),
+                user.getPassword()
+        )){
+
+            throw new RuntimeException("Invalid password");
+
         }
 
 
-        return convertToDTO(user);
+
+
+        String token = jwtUtil.generateToken(
+                user.getEmail(),
+                user.getRole().name()
+        );
+
+
+
+        LoginResponseDTO response =
+                new LoginResponseDTO();
+
+
+
+        response.setToken(token);
+
+        response.setRole(user.getRole());
+
+
+
+        return response;
+
+
     }
 
 
 
-    // Update User
-    public User updateUser(Long id, User updatedUser) {
+
+
+
+
+    // ADMIN CREATE USER
+    public UserResponseDTO createAdminUser(User user){
+
+
+        user.setPassword(
+                passwordEncoder.encode(
+                        user.getPassword()
+                )
+        );
+
+
+
+        if(user.getRole()==null){
+
+            user.setRole(Role.USER);
+
+        }
+
+
+
+        User savedUser =
+                userRepository.save(user);
+
+
+
+        return convertToDTO(savedUser);
+
+
+    }
+
+
+
+
+
+
+
+
+    // GET ALL USERS
+    public List<User> getAllUsers(){
+
+
+        return userRepository.findAll();
+
+
+    }
+
+
+
+
+
+
+
+
+    // GET USER BY ID
+    public UserResponseDTO getUserById(Long id){
+
+
+        User user = userRepository.findById(id)
+                .orElseThrow(
+                        () -> new RuntimeException("User not found")
+                );
+
+
+        return convertToDTO(user);
+
+    }
+
+
+
+
+
+
+
+
+
+    // UPDATE USER
+    public User updateUser(
+            Long id,
+            User updatedUser
+    ){
 
 
         User existingUser =
                 userRepository.findById(id)
-                        .orElse(null);
+                        .orElseThrow(
+                                () -> new RuntimeException("User not found")
+                        );
 
 
-        if(existingUser != null) {
+
+        existingUser.setName(
+                updatedUser.getName()
+        );
 
 
-            existingUser.setName(updatedUser.getName());
+        existingUser.setEmail(
+                updatedUser.getEmail()
+        );
 
-            existingUser.setEmail(updatedUser.getEmail());
 
 
-            // Encrypt updated password
+        if(updatedUser.getPassword()!=null){
+
             existingUser.setPassword(
                     passwordEncoder.encode(
                             updatedUser.getPassword()
                     )
             );
 
-
-            existingUser.setRole(updatedUser.getRole());
-
-
-            return userRepository.save(existingUser);
         }
 
 
-        return null;
+
+        if(updatedUser.getRole()!=null){
+
+            existingUser.setRole(
+                    updatedUser.getRole()
+            );
+
+        }
+
+
+
+        return userRepository.save(existingUser);
+
+
     }
 
 
 
 
-    // Delete User
-    public void deleteUser(Long id) {
+
+
+
+
+
+    // DELETE USER
+    public void deleteUser(Long id){
+
 
         userRepository.deleteById(id);
+
+
     }
 
 
 
 
 
-    // Convert Entity to DTO
-    public UserResponseDTO convertToDTO(User user) {
 
 
-        return new UserResponseDTO(
 
-                user.getId(),
+    // ENTITY TO DTO CONVERTER
+    private UserResponseDTO convertToDTO(User user){
 
-                user.getName(),
 
-                user.getEmail(),
+        UserResponseDTO dto =
+                new UserResponseDTO();
 
-                user.getRole()
-        );
+
+
+        dto.setId(user.getId());
+
+        dto.setName(user.getName());
+
+        dto.setEmail(user.getEmail());
+
+        dto.setRole(user.getRole());
+
+
+
+        return dto;
+
+
     }
 
-
-
-
-
-    // Login
-    public LoginResponseDTO login(LoginRequestDTO loginRequestDTO) {
-
-
-        Optional<User> optionalUser =
-                userRepository.findByEmail(
-                        loginRequestDTO.getEmail()
-                );
-
-
-
-        if(optionalUser.isEmpty()) {
-
-
-            return new LoginResponseDTO(
-                    "Invalid Email or Password",
-                    null
-            );
-        }
-
-
-
-        User user = optionalUser.get();
-
-
-
-        // Compare entered password with encrypted password
-        if(!passwordEncoder.matches(
-                loginRequestDTO.getPassword(),
-                user.getPassword()
-        )) {
-
-
-            return new LoginResponseDTO(
-                    "Invalid Email or Password",
-                    null
-            );
-        }
-
-
-
-        // Generate JWT Token
-        String token =
-                jwtUtil.generateToken(user.getEmail());
-        System.out.println("Generated Token: " + token);
-
-
-        return new LoginResponseDTO(
-                "Login Successful",
-                token
-        );
-    }
 
 }

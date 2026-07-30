@@ -1,28 +1,40 @@
 package com.auditsphere.auditspherebackend.dto;
 
+import com.auditsphere.auditspherebackend.entity.Role;
+
 public class LoginResponseDTO {
 
-    private String message;
+
     private String token;
 
-    public LoginResponseDTO(String message, String token) {
-        this.message = message;
-        this.token = token;
+    private Role role;
+
+
+
+    public LoginResponseDTO(){
+
     }
 
-    public String getMessage() {
-        return message;
-    }
+
 
     public String getToken() {
         return token;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
-    }
 
     public void setToken(String token) {
         this.token = token;
     }
+
+
+
+    public Role getRole() {
+        return role;
+    }
+
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
 }
