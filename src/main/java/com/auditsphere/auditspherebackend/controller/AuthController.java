@@ -5,37 +5,35 @@ import com.auditsphere.auditspherebackend.dto.LoginRequestDTO;
 import com.auditsphere.auditspherebackend.dto.LoginResponseDTO;
 import com.auditsphere.auditspherebackend.dto.UserRequestDTO;
 import com.auditsphere.auditspherebackend.dto.UserResponseDTO;
-
 import com.auditsphere.auditspherebackend.service.UserService;
 
 import jakarta.validation.Valid;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 
 
 @RestController
 @RequestMapping("/auth")
+@CrossOrigin(
+        origins = {
+                "http://localhost:5173",
+                "http://localhost:5176"
+        }
+)
 public class AuthController {
 
 
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
 
 
-
-
-    // Public registration
-
-    @PostMapping("/register")
-    public UserResponseDTO register(
-            @Valid @RequestBody UserRequestDTO userRequestDTO
+    public AuthController(
+            UserService userService
     ){
 
-        return userService.saveUser(userRequestDTO);
+        this.userService = userService;
 
     }
 
@@ -44,14 +42,32 @@ public class AuthController {
 
 
 
-    // Public login
+
+    // REGISTER USER
+
+    @PostMapping("/register")
+    public UserResponseDTO register(
+            @Valid @RequestBody UserRequestDTO request
+    ){
+
+        return userService.saveUser(request);
+
+    }
+
+
+
+
+
+
+
+    // LOGIN USER
 
     @PostMapping("/login")
     public LoginResponseDTO login(
-            @Valid @RequestBody LoginRequestDTO loginRequestDTO
+            @Valid @RequestBody LoginRequestDTO request
     ){
 
-        return userService.login(loginRequestDTO);
+        return userService.login(request);
 
     }
 

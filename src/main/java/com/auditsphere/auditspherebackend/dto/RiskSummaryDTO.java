@@ -1,31 +1,38 @@
 package com.auditsphere.auditspherebackend.dto;
 
+
+import lombok.Getter;
+import lombok.Setter;
+
+
+
+@Getter
+@Setter
 public class RiskSummaryDTO {
 
+
     private String riskLevel;
-    private long count;
 
-    public RiskSummaryDTO() {
+
+    private Long count;
+
+
+
+    public RiskSummaryDTO(){
+
     }
 
-    public RiskSummaryDTO(String riskLevel, long count) {
+
+
+    public RiskSummaryDTO(
+            String riskLevel,
+            Long count
+    ){
+
         this.riskLevel = riskLevel;
         this.count = count;
+
     }
 
-    public String getRiskLevel() {
-        return riskLevel;
-    }
 
-    public void setRiskLevel(String riskLevel) {
-        this.riskLevel = riskLevel;
-    }
-
-    public long getCount() {
-        return count;
-    }
-
-    public void setCount(long count) {
-        this.count = count;
-    }
 }

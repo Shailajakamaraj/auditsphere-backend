@@ -1,8 +1,8 @@
 package com.auditsphere.auditspherebackend.controller;
 
 
+import com.auditsphere.auditspherebackend.dto.UserRequestDTO;
 import com.auditsphere.auditspherebackend.dto.UserResponseDTO;
-import com.auditsphere.auditspherebackend.entity.User;
 import com.auditsphere.auditspherebackend.service.UserService;
 
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,11 +17,14 @@ import java.util.List;
 public class UserController {
 
 
+
     private final UserService userService;
 
 
 
-    public UserController(UserService userService){
+    public UserController(
+            UserService userService
+    ){
 
         this.userService = userService;
 
@@ -31,15 +34,19 @@ public class UserController {
 
 
 
-    // ADMIN creates users
+
+
+    // ==============================
+    // CREATE USER
+    // ==============================
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public UserResponseDTO createUser(
-            @RequestBody User user
+            @RequestBody UserRequestDTO dto
     ){
 
-        return userService.createAdminUser(user);
+        return userService.createAdminUser(dto);
 
     }
 
@@ -47,11 +54,17 @@ public class UserController {
 
 
 
-    // ADMIN views all users
+
+
+
+
+    // ==============================
+    // GET ALL USERS
+    // ==============================
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public List<User> getAllUsers(){
+    public List<UserResponseDTO> getAllUsers(){
 
         return userService.getAllUsers();
 
@@ -61,7 +74,13 @@ public class UserController {
 
 
 
-    // ADMIN views user by id
+
+
+
+
+    // ==============================
+    // GET USER BY ID
+    // ==============================
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -77,16 +96,25 @@ public class UserController {
 
 
 
-    // ADMIN updates users
+
+
+
+
+    // ==============================
+    // UPDATE USER
+    // ==============================
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public User updateUser(
+    public UserResponseDTO updateUser(
             @PathVariable Long id,
-            @RequestBody User user
+            @RequestBody UserRequestDTO dto
     ){
 
-        return userService.updateUser(id,user);
+        return userService.updateUser(
+                id,
+                dto
+        );
 
     }
 
@@ -94,7 +122,13 @@ public class UserController {
 
 
 
-    // ADMIN deletes users
+
+
+
+
+    // ==============================
+    // DELETE USER
+    // ==============================
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")

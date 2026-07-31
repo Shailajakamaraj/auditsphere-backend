@@ -1,6 +1,7 @@
 package com.auditsphere.auditspherebackend.service;
+import java.math.BigDecimal;
 
-
+import com.auditsphere.auditspherebackend.entity.RiskLevel;
 import com.auditsphere.auditspherebackend.entity.Transaction;
 import com.auditsphere.auditspherebackend.repository.TransactionRepository;
 
@@ -21,9 +22,10 @@ public class RiskAnalysisService {
 
     public RiskAnalysisService(
             TransactionRepository transactionRepository
-    ) {
+    ){
 
-        this.transactionRepository = transactionRepository;
+        this.transactionRepository =
+                transactionRepository;
 
     }
 
@@ -31,28 +33,34 @@ public class RiskAnalysisService {
 
 
 
-    public void analyzeRisk(Transaction transaction) {
 
-
-        System.out.println("🔥 AI RISK ENGINE STARTED");
-
+    public void analyzeRisk(
+            Transaction transaction
+    ){
 
 
         int score = 0;
 
 
-        StringBuilder reason = new StringBuilder();
+        StringBuilder reason =
+                new StringBuilder();
 
 
-        StringBuilder factors = new StringBuilder();
+        StringBuilder factors =
+                new StringBuilder();
 
 
 
 
-        // Rule 1: High Amount Detection
 
-        if (transaction.getAmount() != null &&
-                transaction.getAmount() > 50000) {
+        // High amount check
+
+        if(transaction.getAmount()!=null
+                &&
+                transaction.getAmount()
+                        .compareTo(
+                                new BigDecimal("50000")
+                        ) > 0){
 
 
             score += 20;
@@ -64,7 +72,7 @@ public class RiskAnalysisService {
 
 
             factors.append(
-                    "• High transaction amount (+20)\n"
+                    "High amount (+20)\n"
             );
 
         }
@@ -73,20 +81,21 @@ public class RiskAnalysisService {
 
 
 
-        // Rule 2: Duplicate Invoice Detection
+
+        // Duplicate invoice check
+
+        List<Transaction> existing =
+                transactionRepository
+                        .findByInvoiceNumber(
+                                transaction.getInvoiceNumber()
+                        );
 
 
-        List<Transaction> existingTransactions =
-                transactionRepository.findByInvoiceNumber(
-                        transaction.getInvoiceNumber()
-                );
+
+        if(!existing.isEmpty()){
 
 
-
-        if (!existingTransactions.isEmpty()) {
-
-
-            score += 40;
+            score +=40;
 
 
             reason.append(
@@ -95,7 +104,7 @@ public class RiskAnalysisService {
 
 
             factors.append(
-                    "• Duplicate invoice pattern detected (+40)\n"
+                    "Duplicate invoice (+40)\n"
             );
 
         }
@@ -104,20 +113,23 @@ public class RiskAnalysisService {
 
 
 
-        // Rule 3: New Vendor Detection
+
+
+        // New vendor check
 
 
         long vendorCount =
-                transactionRepository.countByVendorName(
-                        transaction.getVendorName()
-                );
+                transactionRepository
+                        .countByVendorName(
+                                transaction.getVendorName()
+                        );
 
 
 
-        if (vendorCount == 0) {
+        if(vendorCount==0){
 
 
-            score += 15;
+            score +=15;
 
 
             reason.append(
@@ -126,7 +138,7 @@ public class RiskAnalysisService {
 
 
             factors.append(
-                    "• New vendor risk detected (+15)\n"
+                    "New vendor (+15)\n"
             );
 
         }
@@ -137,31 +149,27 @@ public class RiskAnalysisService {
 
 
 
-        // Risk Classification
 
-
-        String riskLevel;
+        RiskLevel riskLevel;
 
 
 
-        if(score >= 60) {
+        if(score>=60){
 
-
-            riskLevel = "HIGH";
-
+            riskLevel =
+                    RiskLevel.HIGH;
 
         }
-        else if(score >= 30) {
+        else if(score>=30){
 
-
-            riskLevel = "MEDIUM";
-
+            riskLevel =
+                    RiskLevel.MEDIUM;
 
         }
-        else {
+        else{
 
-
-            riskLevel = "LOW";
+            riskLevel =
+                    RiskLevel.LOW;
 
         }
 
@@ -170,35 +178,31 @@ public class RiskAnalysisService {
 
 
 
-
-        // AI Recommendation Generation
 
 
         String recommendation;
 
 
 
-        if(score >= 60) {
+        if(riskLevel==RiskLevel.HIGH){
 
 
             recommendation =
-                    "Immediate audit review required. Verify invoice authenticity and vendor details before approval.";
-
+                    "Immediate audit review required. Verify invoice and vendor.";
 
         }
-        else if(score >=30) {
+        else if(riskLevel==RiskLevel.MEDIUM){
 
 
             recommendation =
-                    "Perform additional verification before processing this transaction.";
-
+                    "Additional verification recommended.";
 
         }
-        else {
+        else{
 
 
             recommendation =
-                    "Transaction appears normal. Continue regular monitoring.";
+                    "Transaction appears normal.";
 
         }
 
@@ -207,15 +211,14 @@ public class RiskAnalysisService {
 
 
 
-
-
-        // Store Analysis Result
 
 
         transaction.setRiskScore(score);
 
 
-        transaction.setRiskLevel(riskLevel);
+        transaction.setRiskLevel(
+                riskLevel
+        );
 
 
         transaction.setRiskReason(
@@ -234,22 +237,7 @@ public class RiskAnalysisService {
 
 
 
-
-
-        System.out.println(
-                "FINAL SCORE = " + score
-        );
-
-
-        System.out.println(
-                "RISK LEVEL = " + riskLevel
-        );
-
-
-        System.out.println(
-                "FACTORS = " + factors
-        );
-
     }
+
 
 }

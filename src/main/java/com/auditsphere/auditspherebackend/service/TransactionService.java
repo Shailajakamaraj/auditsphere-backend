@@ -1,10 +1,14 @@
 package com.auditsphere.auditspherebackend.service;
 
 
+import com.auditsphere.auditspherebackend.dto.TransactionDetailsDTO;
 import com.auditsphere.auditspherebackend.dto.TransactionRequestDTO;
 import com.auditsphere.auditspherebackend.dto.TransactionResponseDTO;
 
+
+import com.auditsphere.auditspherebackend.entity.RiskLevel;
 import com.auditsphere.auditspherebackend.entity.Transaction;
+
 
 import com.auditsphere.auditspherebackend.exception.ResourceNotFoundException;
 
@@ -15,7 +19,6 @@ import org.springframework.stereotype.Service;
 
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 
@@ -26,7 +29,9 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
 
+
     private final RiskAnalysisService riskAnalysisService;
+
 
     private final AuditLogService auditLogService;
 
@@ -37,12 +42,10 @@ public class TransactionService {
             TransactionRepository transactionRepository,
             RiskAnalysisService riskAnalysisService,
             AuditLogService auditLogService
-    ) {
+    ){
 
         this.transactionRepository = transactionRepository;
-
         this.riskAnalysisService = riskAnalysisService;
-
         this.auditLogService = auditLogService;
 
     }
@@ -56,10 +59,11 @@ public class TransactionService {
 
     public TransactionResponseDTO createTransaction(
             TransactionRequestDTO dto
-    ) {
+    ){
 
 
-        Transaction transaction = new Transaction();
+        Transaction transaction =
+                new Transaction();
 
 
 
@@ -95,40 +99,28 @@ public class TransactionService {
 
 
 
-
-        // Risk Analysis Engine
-
         riskAnalysisService.analyzeRisk(
                 transaction
         );
 
 
 
+        Transaction saved =
+                transactionRepository.save(
+                        transaction
+                );
 
 
-        Transaction savedTransaction =
-                transactionRepository.save(transaction);
-
-
-
-
-
-
-        // Audit Log
 
         auditLogService.logAction(
                 "CREATE_TRANSACTION",
                 "Transaction",
-                savedTransaction.getId()
+                saved.getId()
         );
 
 
 
-
-
-        return convertToDTO(
-                savedTransaction
-        );
+        return convertToDTO(saved);
 
     }
 
@@ -140,10 +132,9 @@ public class TransactionService {
 
 
 
-    // GET ALL TRANSACTIONS
+    // GET ALL
 
-
-    public List<TransactionResponseDTO> getAllTransactions() {
+    public List<TransactionResponseDTO> getAllTransactions(){
 
 
         return transactionRepository
@@ -153,7 +144,7 @@ public class TransactionService {
 
                 .map(this::convertToDTO)
 
-                .collect(Collectors.toList());
+                .toList();
 
     }
 
@@ -165,12 +156,11 @@ public class TransactionService {
 
 
 
-    // GET TRANSACTION BY ID
-
+    // GET BY ID
 
     public TransactionResponseDTO getTransactionById(
             Long id
-    ) {
+    ){
 
 
         Transaction transaction =
@@ -197,14 +187,12 @@ public class TransactionService {
 
 
 
-    // UPDATE TRANSACTION
-
+    // UPDATE
 
     public TransactionResponseDTO updateTransaction(
             Long id,
             TransactionRequestDTO dto
-    ) {
-
+    ){
 
 
         Transaction transaction =
@@ -216,7 +204,6 @@ public class TransactionService {
                                         "Transaction not found"
                                 )
                         );
-
 
 
 
@@ -253,26 +240,16 @@ public class TransactionService {
 
 
 
-
-
-        // Recalculate Risk
-
         riskAnalysisService.analyzeRisk(
                 transaction
         );
 
 
 
-
-
-        Transaction updatedTransaction =
+        Transaction updated =
                 transactionRepository.save(
                         transaction
                 );
-
-
-
-
 
 
 
@@ -284,11 +261,7 @@ public class TransactionService {
 
 
 
-
-
-        return convertToDTO(
-                updatedTransaction
-        );
+        return convertToDTO(updated);
 
     }
 
@@ -300,17 +273,14 @@ public class TransactionService {
 
 
 
-    // DELETE TRANSACTION
-
+    // DELETE
 
     public void deleteTransaction(
             Long id
-    ) {
+    ){
 
 
-
-        if(!transactionRepository.existsById(id)) {
-
+        if(!transactionRepository.existsById(id)){
 
             throw new ResourceNotFoundException(
                     "Transaction not found"
@@ -320,11 +290,7 @@ public class TransactionService {
 
 
 
-
-
         transactionRepository.deleteById(id);
-
-
 
 
 
@@ -345,11 +311,9 @@ public class TransactionService {
 
 
 
-    // OPTIMIZED DUPLICATE TRANSACTIONS
+    // DUPLICATES
 
-
-    public List<TransactionResponseDTO> getDuplicateTransactions() {
-
+    public List<TransactionResponseDTO> getDuplicateTransactions(){
 
 
         return transactionRepository
@@ -359,8 +323,62 @@ public class TransactionService {
 
                 .map(this::convertToDTO)
 
-                .collect(Collectors.toList());
+                .toList();
 
+    }
+
+    public TransactionDetailsDTO getTransactionDetails(Long id) {
+
+        Transaction transaction = transactionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+
+        return TransactionDetailsDTO.builder()
+
+                .id(transaction.getId())
+
+                .invoiceNumber(transaction.getInvoiceNumber())
+
+                .vendorName(transaction.getVendorName())
+
+                .amount(transaction.getAmount())
+
+                .transactionDate(transaction.getTransactionDate())
+
+                .category(transaction.getCategory())
+
+                .status(transaction.getStatus().name())
+
+                .riskLevel(
+                        transaction.getRiskLevel() == null
+                                ? "LOW"
+                                : transaction.getRiskLevel().name()
+                )
+
+                .riskScore(
+                        transaction.getRiskScore() == null
+                                ? 0
+                                : transaction.getRiskScore()
+                )
+
+                .riskReason(
+                        transaction.getRiskReason() == null
+                                ? "No risk detected."
+                                : transaction.getRiskReason()
+                )
+
+                .riskFactors(
+                        transaction.getRiskFactors() == null
+                                ? "No risk factors available."
+                                : transaction.getRiskFactors()
+                )
+
+                .aiRecommendation(
+                        transaction.getAiRecommendation() == null
+                                ? "AI recommendation not available."
+                                : transaction.getAiRecommendation()
+                )
+
+                .build();
     }
 
 
@@ -368,23 +386,21 @@ public class TransactionService {
 
 
 
+    // HIGH RISK
 
-
-
-    // HIGH RISK TRANSACTIONS
-
-
-    public List<TransactionResponseDTO> getHighRiskTransactions() {
+    public List<TransactionResponseDTO> getHighRiskTransactions(){
 
 
         return transactionRepository
-                .findByRiskLevel("HIGH")
+                .findByRiskLevel(
+                        RiskLevel.HIGH
+                )
 
                 .stream()
 
                 .map(this::convertToDTO)
 
-                .collect(Collectors.toList());
+                .toList();
 
     }
 
@@ -398,9 +414,7 @@ public class TransactionService {
 
     // DUPLICATE INVOICE NUMBERS
 
-
     public List<String> getDuplicateInvoiceNumbers(){
-
 
 
         return transactionRepository
@@ -412,7 +426,7 @@ public class TransactionService {
 
                 .distinct()
 
-                .collect(Collectors.toList());
+                .toList();
 
     }
 
@@ -424,19 +438,15 @@ public class TransactionService {
 
 
 
-    // ENTITY TO DTO
-
+    // ENTITY -> DTO
 
     private TransactionResponseDTO convertToDTO(
             Transaction transaction
-    ) {
-
+    ){
 
 
         TransactionResponseDTO dto =
                 new TransactionResponseDTO();
-
-
 
 
 
@@ -445,11 +455,9 @@ public class TransactionService {
         );
 
 
-
         dto.setInvoiceNumber(
                 transaction.getInvoiceNumber()
         );
-
 
 
         dto.setVendorName(
@@ -457,17 +465,14 @@ public class TransactionService {
         );
 
 
-
         dto.setAmount(
                 transaction.getAmount()
         );
 
 
-
         dto.setTransactionDate(
                 transaction.getTransactionDate()
         );
-
 
 
         dto.setCategory(
@@ -477,19 +482,25 @@ public class TransactionService {
 
 
         dto.setStatus(
-                transaction.getStatus()
+
+                transaction.getStatus()!=null
+                        ?
+                        transaction.getStatus().name()
+                        :
+                        null
+
         );
 
 
 
-
-
-
-        // Risk Information
-
-
         dto.setRiskLevel(
-                transaction.getRiskLevel()
+
+                transaction.getRiskLevel()!=null
+                        ?
+                        transaction.getRiskLevel().name()
+                        :
+                        null
+
         );
 
 
@@ -499,22 +510,14 @@ public class TransactionService {
         );
 
 
-
         dto.setRiskReason(
                 transaction.getRiskReason()
         );
 
 
-
-
-
-        // Explainable AI
-
-
         dto.setRiskFactors(
                 transaction.getRiskFactors()
         );
-
 
 
         dto.setAiRecommendation(
@@ -523,11 +526,10 @@ public class TransactionService {
 
 
 
-
-
         return dto;
 
     }
+
 
 
 }

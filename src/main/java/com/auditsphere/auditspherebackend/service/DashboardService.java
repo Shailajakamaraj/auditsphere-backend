@@ -2,13 +2,21 @@ package com.auditsphere.auditspherebackend.service;
 
 
 import com.auditsphere.auditspherebackend.dto.DashboardSummaryDTO;
+import com.auditsphere.auditspherebackend.dto.MonthlySummaryDTO;
+import com.auditsphere.auditspherebackend.dto.RiskSummaryDTO;
+
+
 import com.auditsphere.auditspherebackend.entity.AIReport;
+import com.auditsphere.auditspherebackend.entity.RiskLevel;
 import com.auditsphere.auditspherebackend.entity.Transaction;
+
 
 import com.auditsphere.auditspherebackend.repository.AIReportRepository;
 import com.auditsphere.auditspherebackend.repository.TransactionRepository;
 
+
 import org.springframework.stereotype.Service;
+
 
 import java.util.List;
 
@@ -21,7 +29,9 @@ public class DashboardService {
 
     private final TransactionRepository transactionRepository;
 
+
     private final GeminiService geminiService;
+
 
     private final AIReportRepository aiReportRepository;
 
@@ -36,9 +46,7 @@ public class DashboardService {
     ){
 
         this.transactionRepository = transactionRepository;
-
         this.geminiService = geminiService;
-
         this.aiReportRepository = aiReportRepository;
 
     }
@@ -52,7 +60,7 @@ public class DashboardService {
 
 
     // ==============================
-    // DASHBOARD KPI SUMMARY
+    // DASHBOARD SUMMARY
     // ==============================
 
 
@@ -65,26 +73,20 @@ public class DashboardService {
 
 
 
-
-
         long totalTransactions =
                 transactions.size();
 
 
 
-
-
-
         double totalAmount =
-
                 transactions.stream()
 
-                        .filter(transaction ->
-                                transaction.getAmount()!=null
-                        )
-
-                        .mapToDouble(
-                                Transaction::getAmount
+                        .mapToDouble(t ->
+                                t.getAmount()==null
+                                        ?
+                                        0
+                                        :
+                                        t.getAmount().doubleValue()
                         )
 
                         .sum();
@@ -93,45 +95,19 @@ public class DashboardService {
 
 
 
-
-
         long highRiskTransactions =
-
-                transactions.stream()
-
-                        .filter(transaction ->
-
-                                "HIGH"
-                                        .equals(
-                                                transaction.getRiskLevel()
-                                        )
-
-                        )
-
-                        .count();
-
-
+                transactionRepository.countByRiskLevel(
+                        RiskLevel.HIGH
+                );
 
 
 
 
 
         long duplicateTransactions =
-
-                transactions.stream()
-
-                        .filter(transaction ->
-
-                                transaction.getRiskReason()!=null
-                                        &&
-                                        transaction.getRiskReason()
-                                                .contains("Duplicate")
-
-                        )
-
-                        .count();
-
-
+                transactionRepository
+                        .findDuplicateTransactions()
+                        .size();
 
 
 
@@ -149,6 +125,7 @@ public class DashboardService {
 
         );
 
+
     }
 
 
@@ -160,7 +137,7 @@ public class DashboardService {
 
 
     // ==============================
-    // GENERATE AI INSIGHT
+    // AI INSIGHTS
     // ==============================
 
 
@@ -168,18 +145,15 @@ public class DashboardService {
 
 
 
-        AIReport existingReport =
-
+        AIReport existing =
                 aiReportRepository
                         .findTopByOrderByCreatedAtDesc();
 
 
 
+        if(existing != null){
 
-
-        if(existingReport != null){
-
-            return existingReport.getReport();
+            return existing.getReport();
 
         }
 
@@ -187,30 +161,19 @@ public class DashboardService {
 
 
 
-
-
-
         List<Transaction> transactions =
-
                 transactionRepository.findAll();
 
 
 
 
 
-
-
-        long highRisk =
-
+        long high =
                 transactions.stream()
 
-                        .filter(transaction ->
-
-                                "HIGH"
-                                        .equals(
-                                                transaction.getRiskLevel()
-                                        )
-
+                        .filter(t ->
+                                RiskLevel.HIGH
+                                        .equals(t.getRiskLevel())
                         )
 
                         .count();
@@ -219,20 +182,12 @@ public class DashboardService {
 
 
 
-
-
-
-        long mediumRisk =
-
+        long medium =
                 transactions.stream()
 
-                        .filter(transaction ->
-
-                                "MEDIUM"
-                                        .equals(
-                                                transaction.getRiskLevel()
-                                        )
-
+                        .filter(t ->
+                                RiskLevel.MEDIUM
+                                        .equals(t.getRiskLevel())
                         )
 
                         .count();
@@ -241,25 +196,10 @@ public class DashboardService {
 
 
 
-
-
-
-        long duplicateInvoices =
-
-                transactions.stream()
-
-                        .filter(transaction ->
-
-
-                                transaction.getRiskReason()!=null
-                                        &&
-                                        transaction.getRiskReason()
-                                                .contains("Duplicate")
-
-                        )
-
-                        .count();
-
+        long duplicate =
+                transactionRepository
+                        .findDuplicateTransactions()
+                        .size();
 
 
 
@@ -269,86 +209,56 @@ public class DashboardService {
 
         String prompt = """
 
-                You are an Internal Audit AI assistant.
+        You are an Internal Audit AI.
 
-                Analyze the following financial audit data.
+        Analyze the financial data.
 
-                High Risk Transactions:
-                %d
+        Total Transactions : %d
 
+        High Risk : %d
 
-                Medium Risk Transactions:
-                %d
+        Medium Risk : %d
 
-
-                Duplicate Invoice Patterns:
-                %d
+        Duplicate Transactions : %d
 
 
-                Generate a professional audit report containing:
+        Generate:
 
-                1. Risk Summary
+        1. Executive Summary
 
-                2. Possible Fraud Indicators
+        2. Fraud Indicators
 
-                3. Recommended Audit Actions
-
-
-                Keep the response concise and professional.
-
-                """
-                .formatted(
-                        highRisk,
-                        mediumRisk,
-                        duplicateInvoices
-                );
+        3. Recommendations
 
 
+        Use professional audit language.
 
+        """.formatted(
 
+                transactions.size(),
+
+                high,
+
+                medium,
+
+                duplicate
+
+        );
 
 
 
 
-        String result;
 
-
-
-        try{
-
-
-            result =
-                    geminiService
-                            .generateInsight(prompt);
-
-
-        }
-        catch(Exception e){
-
-
-            result =
-                    """
-                    AI analysis service is currently unavailable.
-
-                    Please manually review:
-                    - High risk transactions
-                    - Duplicate invoices
-                    - Suspicious vendor activity
-                    """;
-
-
-        }
-
-
-
+        String aiResult =
+                geminiService.generateInsight(prompt);
 
 
 
 
 
         AIReport report =
+                new AIReport(aiResult);
 
-                new AIReport(result);
 
 
 
@@ -359,8 +269,8 @@ public class DashboardService {
 
 
 
+        return aiResult;
 
-        return result;
 
     }
 
@@ -373,22 +283,140 @@ public class DashboardService {
 
 
     // ==============================
-    // ADMIN REFRESH AI REPORT
+    // REFRESH AI REPORT
     // ==============================
 
 
     public void refreshAIReport(){
 
-
-
         aiReportRepository.deleteAll();
 
+    }
 
 
-        generateInsight();
+
+
+
+
+
+
+
+    // ==============================
+    // MONTHLY SUMMARY
+    // ==============================
+
+
+    public List<MonthlySummaryDTO> getMonthlySummary(){
+
+
+
+        return transactionRepository
+                .getMonthlySummary()
+
+                .stream()
+
+                .map(row ->
+
+                        new MonthlySummaryDTO(
+
+                                getMonthName(
+                                        ((Number)row[1])
+                                                .intValue()
+                                ),
+
+                                ((Number)row[2])
+                                        .longValue()
+
+                        )
+
+                )
+
+                .toList();
 
 
     }
+
+
+
+
+
+
+
+
+
+    // ==============================
+    // RISK SUMMARY
+    // ==============================
+
+
+    public List<RiskSummaryDTO> getRiskSummary(){
+
+
+
+        return transactionRepository
+                .getRiskSummary()
+
+                .stream()
+
+                .map(row ->
+
+
+                        new RiskSummaryDTO(
+
+                                row[0] != null
+                                        ?
+                                        row[0].toString()
+                                        :
+                                        "UNKNOWN",
+
+
+                                ((Number)row[1])
+                                        .longValue()
+
+                        )
+
+                )
+
+                .toList();
+
+
+    }
+
+
+
+
+
+
+
+
+
+    private String getMonthName(
+            int month
+    ){
+
+
+        return switch(month){
+
+            case 1 -> "Jan";
+            case 2 -> "Feb";
+            case 3 -> "Mar";
+            case 4 -> "Apr";
+            case 5 -> "May";
+            case 6 -> "Jun";
+            case 7 -> "Jul";
+            case 8 -> "Aug";
+            case 9 -> "Sep";
+            case 10 -> "Oct";
+            case 11 -> "Nov";
+            case 12 -> "Dec";
+
+            default -> "Unknown";
+
+        };
+
+
+    }
+
 
 
 }

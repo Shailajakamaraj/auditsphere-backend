@@ -1,13 +1,18 @@
 package com.auditsphere.auditspherebackend.dto;
 
-import com.auditsphere.auditspherebackend.entity.Role;
 
+import lombok.Getter;
+import lombok.Setter;
+
+
+@Getter
+@Setter
 public class LoginResponseDTO {
 
 
     private String token;
 
-    private Role role;
+    private String role;
 
 
 
@@ -17,24 +22,14 @@ public class LoginResponseDTO {
 
 
 
-    public String getToken() {
-        return token;
-    }
+    public LoginResponseDTO(
+            String token,
+            String role
+    ){
 
-
-    public void setToken(String token) {
         this.token = token;
-    }
-
-
-
-    public Role getRole() {
-        return role;
-    }
-
-
-    public void setRole(Role role) {
         this.role = role;
+
     }
 
 }

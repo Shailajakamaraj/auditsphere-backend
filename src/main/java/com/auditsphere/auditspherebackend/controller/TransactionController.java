@@ -1,6 +1,6 @@
 package com.auditsphere.auditspherebackend.controller;
 
-
+import com.auditsphere.auditspherebackend.dto.TransactionDetailsDTO;
 
 import com.auditsphere.auditspherebackend.dto.TransactionRequestDTO;
 import com.auditsphere.auditspherebackend.dto.TransactionResponseDTO;
@@ -10,6 +10,7 @@ import com.auditsphere.auditspherebackend.service.TransactionService;
 import jakarta.validation.Valid;
 
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -86,22 +87,17 @@ public class TransactionController {
 
     // ADMIN + MANAGER + AUDITOR
 
+
+
+
     @GetMapping("/{id}")
-    @PreAuthorize(
-            "hasAnyRole('ADMIN','MANAGER','AUDITOR')"
-    )
-    public TransactionResponseDTO getTransactionById(
-            @PathVariable Long id
-    ){
+    public ResponseEntity<TransactionDetailsDTO> getTransactionDetails(
+            @PathVariable Long id) {
 
-        return transactionService.getTransactionById(id);
-
+        return ResponseEntity.ok(
+                transactionService.getTransactionDetails(id)
+        );
     }
-
-
-
-
-
 
 
     // DUPLICATE INVOICE ANALYSIS

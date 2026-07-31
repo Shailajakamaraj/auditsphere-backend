@@ -1,10 +1,13 @@
 package com.auditsphere.auditspherebackend.repository;
 
 
+import com.auditsphere.auditspherebackend.entity.RiskLevel;
 import com.auditsphere.auditspherebackend.entity.Transaction;
+
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+
 
 import java.util.List;
 
@@ -15,28 +18,31 @@ public interface TransactionRepository
 
 
 
-    // Find duplicate invoice checking
     List<Transaction> findByInvoiceNumber(
             String invoiceNumber
     );
 
 
 
-    // New vendor detection
     long countByVendorName(
             String vendorName
     );
 
 
 
-    // High risk transactions
     List<Transaction> findByRiskLevel(
-            String riskLevel
+            RiskLevel riskLevel
     );
 
 
 
-    // Optimized duplicate transaction query
+    long countByRiskLevel(
+            RiskLevel riskLevel
+    );
+
+
+
+
     @Query("""
             SELECT t
             FROM Transaction t
@@ -52,11 +58,39 @@ public interface TransactionRepository
 
 
 
-    // Dashboard statistics
 
-    long countByRiskLevel(
-            String riskLevel
-    );
+
+    // Monthly Transaction Summary
+
+    @Query("""
+            SELECT
+            YEAR(t.transactionDate),
+            MONTH(t.transactionDate),
+            COUNT(t)
+            FROM Transaction t
+            WHERE t.transactionDate IS NOT NULL
+            GROUP BY YEAR(t.transactionDate),
+                     MONTH(t.transactionDate)
+            ORDER BY YEAR(t.transactionDate),
+                     MONTH(t.transactionDate)
+            """)
+    List<Object[]> getMonthlySummary();
+
+
+
+
+
+    // Risk Distribution
+
+    @Query("""
+            SELECT
+            t.riskLevel,
+            COUNT(t)
+            FROM Transaction t
+            GROUP BY t.riskLevel
+            """)
+    List<Object[]> getRiskSummary();
+
 
 
 }

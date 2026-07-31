@@ -1,14 +1,15 @@
 package com.auditsphere.auditspherebackend.dto;
 
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
+import com.auditsphere.auditspherebackend.entity.TransactionStatus;
+
+import jakarta.validation.constraints.*;
 
 import lombok.Getter;
 import lombok.Setter;
 
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 
@@ -42,7 +43,7 @@ public class TransactionRequestDTO {
     @Positive(
             message = "Amount must be greater than zero"
     )
-    private Double amount;
+    private BigDecimal amount;
 
 
 
@@ -66,10 +67,11 @@ public class TransactionRequestDTO {
 
 
 
-    @NotBlank(
+    @NotNull(
             message = "Status is required"
     )
-    private String status;
+    private TransactionStatus status;
+
 
 
 }

@@ -2,30 +2,31 @@ package com.auditsphere.auditspherebackend.dto;
 
 public class MonthlySummaryDTO {
 
-    private int month;
-    private long count;
+    private String month;
+
+    private Long count;
 
     public MonthlySummaryDTO() {
     }
 
-    public MonthlySummaryDTO(int month, long count) {
+    public MonthlySummaryDTO(String month, Long count) {
         this.month = month;
         this.count = count;
     }
 
-    public int getMonth() {
+    public String getMonth() {
         return month;
     }
 
-    public void setMonth(int month) {
+    public void setMonth(String month) {
         this.month = month;
     }
 
-    public long getCount() {
+    public Long getCount() {
         return count;
     }
 
-    public void setCount(long count) {
+    public void setCount(Long count) {
         this.count = count;
     }
 }
