@@ -180,17 +180,18 @@ public class GeminiService {
 
 
         }
-
-        catch(Exception e){
-
+        catch (Exception e) {
 
             e.printStackTrace();
 
+            return """
+AI Insights Temporarily Unavailable
 
-            return
-                    "AI service unavailable : "
-                            +
-                            e.getMessage();
+The external AI service is currently unavailable or has reached its request limit.
+
+AuditSphere is functioning normally.
+Please try refreshing later after the AI service quota resets.
+""";
 
         }
 

@@ -1,5 +1,5 @@
 package com.auditsphere.auditspherebackend.controller;
-
+import org.springframework.web.multipart.MultipartFile;
 
 import com.auditsphere.auditspherebackend.dto.UserRequestDTO;
 import com.auditsphere.auditspherebackend.dto.UserResponseDTO;
@@ -141,6 +141,20 @@ public class UserController {
         return "User deleted successfully";
 
     }
+// ==============================
+// BULK UPLOAD USERS
+// ==============================
 
+    @PostMapping("/upload")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String uploadUsers(
+            @RequestParam("file") MultipartFile file
+    ) {
+
+        userService.uploadUsersFromExcel(file);
+
+        return "Users uploaded successfully.";
+
+    }
 
 }

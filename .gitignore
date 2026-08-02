@@ -83,3 +83,10 @@ application-local.propertiesHELP.md
                             # Secret configuration files
                             application-secret.properties
                             application-local.properties
+
+                           target/
+                           .idea/
+                           .vscode/
+                           *.iml
+                           logs/
+                           *.log

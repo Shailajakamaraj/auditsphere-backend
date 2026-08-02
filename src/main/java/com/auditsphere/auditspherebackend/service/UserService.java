@@ -1,6 +1,9 @@
 package com.auditsphere.auditspherebackend.service;
 
-
+import com.auditsphere.auditspherebackend.util.ExcelHelper;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
+import java.util.ArrayList;
 import com.auditsphere.auditspherebackend.dto.LoginRequestDTO;
 import com.auditsphere.auditspherebackend.dto.LoginResponseDTO;
 import com.auditsphere.auditspherebackend.dto.UserRequestDTO;
@@ -533,5 +536,36 @@ public class UserService {
         return mapToResponse(updatedUser);
 
     }
+    public void uploadUsersFromExcel(MultipartFile file) {
 
+        try {
+
+            List<User> users = ExcelHelper.excelToUsers(
+                    file.getInputStream(),
+                    passwordEncoder
+            );
+
+            List<User> usersToSave = new ArrayList<>();
+
+            for (User user : users) {
+
+                if (!userRepository.existsByEmail(user.getEmail())) {
+
+                    usersToSave.add(user);
+
+                }
+
+            }
+
+            userRepository.saveAll(usersToSave);
+
+        }
+
+        catch (IOException e) {
+
+            throw new RuntimeException("Could not upload Excel file.");
+
+        }
+
+    }
 }
