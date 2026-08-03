@@ -15,9 +15,9 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource(){
 
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(
+        configuration.setAllowedOriginPatterns(
                 List.of(
-                        "https://auditsphere-frontend-git-main-shailajas-projects-96f5b37a.vercel.app"
+                        "https://*.vercel.app"
                 )
         );
 
